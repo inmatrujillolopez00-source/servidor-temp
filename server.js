@@ -7,6 +7,12 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Forzar UTF-8 en todas las respuestas (SOLUCIÓN)
+app.use((req, res, next) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    next();
+});
+
 // Endpoint principal
 app.get('/', (req, res) => {
     res.json({
