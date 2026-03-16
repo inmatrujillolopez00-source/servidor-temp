@@ -1,65 +1,71 @@
-const express = require('express');
+﻿const express = require('express');
 const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Forzar UTF-8 en todas las respuestas (SOLUCI�N)
-app.use((req, res, next) => {
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    next();
-});
+// Variables de control
+let temperaturaManual = null;
+let modoAutomatico = true;
 
-// Endpoint principal
-app.get('/', (req, res) => {
-    res.json({
-        mensaje: "API de Temperatura para Unity",
-        endpoints: {
-            temperatura: "/api/temperatura",
-            health: "/health"
-        }
-    });
-});
-
-// Endpoint de temperatura (simulada)
+// GET - Obtener temperatura (automática o manual)
 app.get('/api/temperatura', (req, res) => {
-    // Generar temperatura aleatoria entre -5 y 45 grados
-    const temp = -5 + Math.random() * 50;
+    let temp;
+    
+    if (!modoAutomatico && temperaturaManual !== null) {
+        temp = temperaturaManual;
+    } else {
+        temp = -5 + Math.random() * 50; // aleatoria
+    }
     
     res.json({
         temperatura: Number(temp.toFixed(1)),
         unidad: "C",
         timestamp: new Date().toISOString(),
-        calidad: obtenerCalidad(temp)
+        calidad: obtenerCalidad(temp),
+        modo: modoAutomatico ? "auto" : "manual"
     });
 });
 
-// Endpoint de health check
-app.get('/health', (req, res) => {
+// POST - Establecer temperatura manualmente
+app.post('/api/temperatura', (req, res) => {
+    const { temperatura } = req.body;
+    
+    if (temperatura === undefined) {
+        return res.status(400).json({ error: "Falta el campo temperatura" });
+    }
+    
+    temperaturaManual = temperatura;
+    modoAutomatico = false;
+    
+    console.log(`Temperatura manual: ${temperatura}°C`);
+    
     res.json({
-        status: "ok",
-        uptime: process.uptime(),
+        mensaje: "Temperatura actualizada manualmente",
+        temperatura: temperatura,
+        modo: "manual",
         timestamp: new Date().toISOString()
     });
 });
 
-// Funci�n auxiliar para dar m�s realismo
+// POST - Volver a modo automático
+app.post('/api/auto', (req, res) => {
+    modoAutomatico = true;
+    temperaturaManual = null;
+    console.log("Modo automático restaurado");
+    res.json({ mensaje: "Modo automático" });
+});
+
 function obtenerCalidad(temp) {
     if (temp < 0) return "bajo cero";
-    if (temp < 15) return "fr�o";
+    if (temp < 15) return "frío";
     if (temp < 25) return "templado";
-    if (temp < 35) return "c�lido";
+    if (temp < 35) return "cálido";
     return "muy caliente";
 }
 
-// Iniciar servidor
 app.listen(PORT, () => {
-    console.log(`Servidor de temperatura corriendo en puerto ${PORT}`);
-    console.log(`Endpoints:`);
-    console.log(`   GET /`);
-    console.log(`   GET /api/temperatura`);
-    console.log(`   GET /health`);
+    console.log(`Servidor con POST en puerto ${PORT}`);
 });
