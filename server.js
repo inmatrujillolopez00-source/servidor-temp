@@ -31,7 +31,7 @@ app.get('/api/temperatura', (req, res) => {
     
     res.json({
         temperatura: Number(temp.toFixed(1)),
-        unidad: "°C",
+        unidad: "C",
         timestamp: new Date().toISOString(),
         calidad: obtenerCalidad(temp)
     });
